@@ -15,11 +15,23 @@ for (int i = 0; i < n; i++)
 }
 
 // --- INICIO DE LÓGICA DEL ALUMNO ---
-// Instrucción: El alumno debe encontrar el valor máximo del arreglo 'numeros'
-int maximo = numeros[0]; 
 
-// TODO: Implementar el algoritmo de búsqueda aquí
+// Asignamos el primer elemento como el máximo inicial.
+// Esto es seguro porque el problema asume que el arreglo tiene al menos 1 elemento (tamaño n).
+int valorMaximo = arreglo[0]; 
 
+// Usamos un ciclo 'for' estándar. Es más rápido que 'foreach' o LINQ en .NET 
+// porque el compilador optimiza la verificación de límites (bounds checking).
+for (int i = 1; i < arreglo.Length; i++)
+{
+    if (arreglo[i] > valorMaximo)
+    {
+        valorMaximo = arreglo[i]; // Actualizamos si encontramos un número mayor
+    }
+}
+
+// Imprimimos estrictamente el resultado, sin texto adicional para no romper el Autograding
+Console.WriteLine(valorMaximo);
 
 // --- FIN DE LÓGICA DEL ALUMNO ---
 
