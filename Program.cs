@@ -36,4 +36,4 @@ Console.WriteLine(valorMaximo);
 // --- FIN DE LÓGICA DEL ALUMNO ---
 
 // 2. Salida: Lo que el Autograding comparará
-Console.WriteLine(maximo);
+//Console.WriteLine(maximo);
