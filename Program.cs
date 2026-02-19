@@ -18,15 +18,15 @@ for (int i = 0; i < n; i++)
 
 // Asignamos el primer elemento como el máximo inicial.
 // Esto es seguro porque el problema asume que el arreglo tiene al menos 1 elemento (tamaño n).
-int valorMaximo = arreglo[0]; 
+int valorMaximo = numeros[0]; 
 
 // Usamos un ciclo 'for' estándar. Es más rápido que 'foreach' o LINQ en .NET 
 // porque el compilador optimiza la verificación de límites (bounds checking).
-for (int i = 1; i < arreglo.Length; i++)
+for (int i = 1; i < numeros.Length; i++)
 {
-    if (arreglo[i] > valorMaximo)
+    if (numeros[i] > valorMaximo)
     {
-        valorMaximo = arreglo[i]; // Actualizamos si encontramos un número mayor
+        valorMaximo = numeros[i]; // Actualizamos si encontramos un número mayor
     }
 }
 
