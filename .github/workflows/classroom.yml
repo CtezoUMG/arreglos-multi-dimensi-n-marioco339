@@ -15,49 +15,113 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Caso 1: Valor Máximo Estándar
+    - name: Pre-compilar Release
+      run: dotnet build -c Release
+
+    # --- EJECUCIÓN DE PRUEBAS ---
     - name: Valor Maximo Estandar
       id: valor-maximo-estandar
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: "Valor Maximo Estandar"
-        setup-command: "dotnet build"
-        command: "dotnet run"
+        command: "/usr/bin/time -v ./bin/Release/net10.0/TestArreglo > out1.txt 2> met1.txt && cat out1.txt"
         input: "5\n10 20 5 8 15"
         expected-output: "20"
         comparison-method: contains
         timeout: 10
         max-score: 40
 
-    # Caso 2: Máximo con Negativos
     - name: Maximo con Negativos
       id: maximo-con-negativos
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: "Maximo con Negativos"
-        command: "dotnet run"
+        command: "/usr/bin/time -v ./bin/Release/net10.0/TestArreglo > out2.txt 2> met2.txt && cat out2.txt"
         input: "3\n-10 -5 -30"
         expected-output: "-5"
         comparison-method: contains
         timeout: 10
         max-score: 30
 
-    # Caso 3: Elemento Único
     - name: Arreglo de un elemento
       id: arreglo-un-elemento
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: "Arreglo de un elemento"
-        command: "dotnet run"
+        command: "/usr/bin/time -v ./bin/Release/net10.0/TestArreglo > out3.txt 2> met3.txt && cat out3.txt"
         input: "1\n99"
         expected-output: "99"
         comparison-method: contains
         timeout: 10
         max-score: 30
+            
+    # --- REPORTE Y ENVÍO (Unificados para evitar pérdida de variables) ---
+    - name: 📊 REPORTE DE EFICIENCIA Y ENVÍO A TABLERO
+      if: always()
+      run: |
+        echo "==============================================================="
+        echo "   AUDITORÍA TÉCNICA DE ALGORITMOS - UMG PROGRA III"
+        echo "==============================================================="
+        
+        # Extraer valores de los 3 casos
+        T1=$(grep "User time" met1.txt | cut -d: -f2 | xargs || echo "0")
+        T2=$(grep "User time" met2.txt | cut -d: -f2 | xargs || echo "0")
+        T3=$(grep "User time" met3.txt | cut -d: -f2 | xargs || echo "0")
+        
+        R1=$(grep "Maximum resident set size" met1.txt | cut -d: -f2 | xargs || echo "0")
+        R2=$(grep "Maximum resident set size" met2.txt | cut -d: -f2 | xargs || echo "0")
+        R3=$(grep "Maximum resident set size" met3.txt | cut -d: -f2 | xargs || echo "0")
+        
+        C1=$(grep "Percent of CPU" met1.txt | cut -d: -f2 | tr -d '%' | xargs || echo "0")
+        C2=$(grep "Percent of CPU" met2.txt | cut -d: -f2 | tr -d '%' | xargs || echo "0")
+        C3=$(grep "Percent of CPU" met3.txt | cut -d: -f2 | tr -d '%' | xargs || echo "0")
+        
+        # Calcular Promedios
+        AVG_TIME=$(awk -v a="$T1" -v b="$T2" -v c="$T3" 'BEGIN { printf "%.3f", (a+b+c)/3 }')
+        AVG_RAM=$(awk -v a="$R1" -v b="$R2" -v c="$R3" 'BEGIN { printf "%.2f", (a+b+c)/3 }')
+        AVG_CPU=$(awk -v a="$C1" -v b="$C2" -v c="$C3" 'BEGIN { printf "%.2f", (a+b+c)/3 }')
+        
+        # Calcular Score Olímpico Pro
+        SCORE=$(awk -v t="$AVG_TIME" -v r="$AVG_RAM" -v c="$AVG_CPU" \
+          'BEGIN { printf "%.2f", (t * 1000 * 1.0) + ((r / 1024) * 0.5) + (c * 0.2) }')
 
-    # Reportador: Es el que suma los puntos y los envía a Classroom
+        echo "🚀 INTENTO NÚMERO: ${{ github.run_number }}"
+        echo "---------------------------------------------------------------"
+        echo "1. PRUEBA ESTÁNDAR:  [OUT: $(cat out1.txt)] | T: ${T1}s | CPU: ${C1}% | RAM: ${R1}KB"
+        echo "2. PRUEBA NEGATIVOS: [OUT: $(cat out2.txt)] | T: ${T2}s | CPU: ${C2}% | RAM: ${R2}KB"
+        echo "3. PRUEBA ÚNICO:     [OUT: $(cat out3.txt)] | T: ${T3}s | CPU: ${C3}% | RAM: ${R3}KB"
+        echo "---------------------------------------------------------------"
+        
+        echo ""
+        echo "==============================================================="
+        echo "📊 PROMEDIOS DE RENDIMIENTO (BASE DEL SCORE)"
+        echo "==============================================================="
+        echo "⏱️ Tiempo Promedio: ${AVG_TIME}s"
+        echo "🧠 RAM Promedio:    ${AVG_RAM} KB"
+        echo "⚡ CPU Promedio:    ${AVG_CPU}%"
+        echo "---------------------------------------------------------------"
+        echo "🏆 RESULTADO FINAL PARA EL RANKING"
+        echo ">>>> SCORE OLÍMPICO PRO: $SCORE <<<<"
+        echo ">>>> LOGRADO AL INTENTO: ${{ github.run_number }} <<<<"
+        echo "==============================================================="
+
+        # ENVÍO A GOOGLE SHEETS (CURL)
+        # Reemplaza URL_AQUI con tu URL de Aplicación Web de Google
+        curl -L -X POST "https://script.google.com/macros/s/AKfycbwgKABgEL8GnF8fUkccLz8e34anoIUE9uzonIM75Rk01fcbvrJdlo7JsSemRUNYBkVN/exec" \
+             -H "Content-Type: application/json" \
+             -d "{
+                  \"fecha\": \"$(date -u +'%d/%m/%Y %H:%M')\",
+                  \"usuario\": \"${{ github.actor }}\",
+                  \"intento\": ${{ github.run_number }},
+                  \"score\": \"$SCORE\",
+                  \"tiempo_avg\": \"${AVG_TIME}s\",
+                  \"ram_avg\": \"${AVG_RAM}KB\",
+                  \"cpu_avg\": \"${AVG_CPU}%\"
+                }"
+
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
+      if: always()
       env:
         VALOR-MAXIMO-ESTANDAR_RESULTS: "${{ steps.valor-maximo-estandar.outputs.result }}"
         MAXIMO-CON-NEGATIVOS_RESULTS: "${{ steps.maximo-con-negativos.outputs.result }}"
