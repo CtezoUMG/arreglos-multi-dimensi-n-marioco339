@@ -20,6 +20,7 @@ for (int i = 0; i < n; i++)
 // Esto es seguro porque el problema asume que el arreglo tiene al menos 1 elemento (tamaño n).
 int valorMaximo = numeros[0]; 
 
+
 // Usamos un ciclo 'for' estándar. Es más rápido que 'foreach' o LINQ en .NET 
 // porque el compilador optimiza la verificación de límites (bounds checking).
 for (int i = 1; i < numeros.Length; i++)
